@@ -47,6 +47,10 @@ public:
         // }
         size_t operator()(const RouteKey &key) const
         {
+            // 这里使用了 C++11 的统一初始化语法（花括号{}），std::hash<T>{} 是用于生成类型 T 的哈希对象。
+            // 例如 std::hash<int>{}(static_cast<int>(key.method)) 是先通过 static_cast 把枚举类型转换为 int，再生成对应的哈希值。
+            // std::hash<std::string>{}(key.path) 则是直接对 string 类型生成哈希值。
+            // 这种写法等价于：std::hash<int> hashInt; size_t methodHash = hashInt(static_cast<int>(key.method));
             size_t methodHash = std::hash<int>{}(static_cast<int>(key.method));
             size_t pathHash = std::hash<std::string>{}(key.path);
             return methodHash * 31 + pathHash;
@@ -84,6 +88,9 @@ private:
     }
 
     // 提取路径参数
+    // match 是正则表达式 std::regex 匹配结果的类型（std::smatch），
+    // 用于存储路径参数等分组的捕获内容。
+    // match[0] 通常为整个匹配的字符串，match[1] ~ match[n] 为各个分组的内容。
     void extractPathParameters(const std::smatch &match, HttpRequest &request)
     {
         // Assuming the first match is the full path, parameters start from index 1

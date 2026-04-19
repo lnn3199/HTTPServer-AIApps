@@ -22,11 +22,13 @@ public:
 
 private:
     bool isOriginAllowed(const std::string& origin) const;
+    std::string resolveAllowOrigin(const std::string& requestOrigin) const;
     void handlePreflightRequest(const HttpRequest& request, HttpResponse& response);
     void addCorsHeaders(HttpResponse& response, const std::string& origin);
 
 private:
     CorsConfig config_;
+    std::string requestOrigin_;
 };
 
 } // namespace middleware

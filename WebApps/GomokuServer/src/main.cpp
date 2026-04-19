@@ -1,5 +1,7 @@
 #include <string>
-#include <iostream>
+#include <cstdlib>
+#include <unistd.h>
+
 #include <muduo/net/TcpServer.h>
 #include <muduo/base/Logging.h>
 #include <muduo/net/EventLoop.h>

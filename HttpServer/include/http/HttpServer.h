@@ -5,22 +5,18 @@
 #include <unistd.h>
 
 #include <functional>
-#include <iostream>
 #include <map>
 #include <memory>
-#include <unordered_map>
 
 #include <muduo/net/TcpServer.h>
 #include <muduo/net/EventLoop.h>
 #include <muduo/base/Logging.h>
 
-#include "HttpContext.h"
 #include "HttpRequest.h"
 #include "HttpResponse.h"
 #include "../router/Router.h"
 #include "../session/SessionManager.h"
 #include "../middleware/MiddlewareChain.h"
-#include "../middleware/cors/CorsMiddleware.h"
 #include "../ssl/SslConnection.h"
 #include "../ssl/SslContext.h"
 
@@ -33,6 +29,9 @@ namespace http
 class HttpServer : muduo::noncopyable
 {
 public:
+    // 这是类型别名（type alias）语法，定义了一个名为 HttpCallback 的类型
+    // HttpCallback 其实是一个 std::function，代表“接收(const HttpRequest&, HttpResponse*)参数，不返回值(void)”的可调用实体（比如函数、lambda、成员函数等）
+    // HttpCallback 不是类也不是函数名，而是一个类型，可以用来声明变量或参数类型，用于存储和调用 HTTP 处理函数
     using HttpCallback = std::function<void (const http::HttpRequest&, http::HttpResponse*)>;
     
     // 构造函数
@@ -110,7 +109,7 @@ public:
         middlewareChain_.addMiddleware(middleware);
     }
 
-    void enableSSL(bool enable) 
+    void enableSSL(bool enable)
     {
         useSSL_ = enable;
     }
@@ -127,6 +126,11 @@ private:
     void onRequest(const muduo::net::TcpConnectionPtr&, const HttpRequest&);
 
     void handleRequest(const HttpRequest& req, HttpResponse* resp);
+
+    /** TLS 时走 SslConnection::send（加密），否则 TcpConnection::send。 */
+    void sendToClient(const muduo::net::TcpConnectionPtr& conn,
+                      const void* data,
+                      size_t len);
     
 private:
     muduo::net::InetAddress                      listenAddr_; // 监听地址
@@ -136,9 +140,8 @@ private:
     router::Router                               router_; // 路由
     std::unique_ptr<session::SessionManager>     sessionManager_; // 会话管理器
     middleware::MiddlewareChain                  middlewareChain_; // 中间件链
-    std::unique_ptr<ssl::SslContext>             sslCtx_; // SSL 上下文
-    bool                                         useSSL_; // 是否使用 SSL   
-    // TcpConnectionPtr -> SslConnectionPtr 
+    std::unique_ptr<ssl::SslContext>             sslCtx_;
+    bool                                         useSSL_;
     std::map<muduo::net::TcpConnectionPtr, std::unique_ptr<ssl::SslConnection>> sslConns_;
 }; 
 

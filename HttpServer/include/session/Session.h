@@ -13,6 +13,8 @@ namespace session
 
 class SessionManager;
 
+// 继承 std::enable_shared_from_this 是为了能够在成员函数内部安全地获取当前对象的 shared_ptr 实例，
+// 以便在需要时将this指针安全地传递给SessionManager等其他管理者，防止对象被提前析构或悬空。
 class Session : public std::enable_shared_from_this<Session>
 {
 public:
@@ -38,7 +40,7 @@ public:
 private:
     std::string                                  sessionId_;
     std::unordered_map<std::string, std::string> data_;
-    std::chrono::system_clock::time_point        expiryTime_;
+    std::chrono::system_clock::time_point        expiryTime_;//绝对过期时间点
     int                                          maxAge_; // 过期时间（秒）
     SessionManager*                              sessionManager_;
 };

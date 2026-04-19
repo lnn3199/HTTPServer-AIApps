@@ -1,5 +1,5 @@
 #include "../../include/http/HttpContext.h"
-
+#include <algorithm>
 using namespace muduo;
 using namespace muduo::net;
 
@@ -15,13 +15,17 @@ bool HttpContext::parseRequest(Buffer *buf, Timestamp receiveTime)
     {
         if (state_ == kExpectRequestLine)
         {
-            const char *crlf = buf->findCRLF(); // 注意这个返回值边界可能有错
+            // 这一行用于查找缓冲区中"\r\n"的指针位置，也就是一行的结束分隔符
+            // findCRLF()是Buffer类中的一个方法，用于在buf内查找下一个回车换行对（"\r\n"），返回其指针位置
+            const char *crlf = buf->findCRLF(); 
             if (crlf)
             {
+                // peek() 是 Buffer 类中的方法，返回当前缓冲区可读数据的起始指针
                 ok = processRequestLine(buf->peek(), crlf);
                 if (ok)
                 {
                     request_.setReceiveTime(receiveTime);
+                    // 这是 Buffer 类中的 retrieveUntil 方法，用于回收（丢弃）从缓冲区起始位置到指定 crlf+2 指针（即包括"\r\n"）之间的所有数据
                     buf->retrieveUntil(crlf + 2);
                     state_ = kExpectHeaders;
                 }
@@ -45,7 +49,7 @@ bool HttpContext::parseRequest(Buffer *buf, Timestamp receiveTime)
                 {
                     request_.addHeader(buf->peek(), colon, crlf);
                 }
-                else if (buf->peek() == crlf)
+                else if (buf->peek() == crlf)//每次 onMessage 都可能往 buf 里追加数据，然后再次调用 parseRequest。
                 { 
                     // 空行，结束Header
                     // 根据请求方法和Content-Length判断是否需要继续读取body
@@ -127,6 +131,7 @@ bool HttpContext::processRequestLine(const char *begin, const char *end)
         space = std::find(start, end, ' ');
         if (space != end)
         {
+            // std::find 返回的是指针范围内(迭代器范围内)第一个找到的 '?' 的位置，如果未找到，返回 space，和 std::string::npos 不同。
             const char *argumentStart = std::find(start, space, '?');
             if (argumentStart != space) // 请求带参数
             {
@@ -139,6 +144,9 @@ bool HttpContext::processRequestLine(const char *begin, const char *end)
             }
 
             start = space + 1;
+            // 下面代码用于判断请求行的 HTTP 版本格式是否为 "HTTP/1.x"
+            // 其中(end - start == 8)表示剩余长度应为8个字符（例如 "HTTP/1.1"）
+            // std::equal 用来比较 start 到 end - 1 之间的内容与 "HTTP/1." 是否一致
             succeed = ((end - start == 8) && std::equal(start, end - 1, "HTTP/1."));
             if (succeed)
             {

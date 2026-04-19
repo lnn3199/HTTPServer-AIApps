@@ -1,0 +1,158 @@
+[
+{
+  "directory": "/home/xwj/Kama-HTTPServer/build",
+  "command": "/usr/bin/c++  -I/home/xwj/Kama-HTTPServer -I/home/xwj/Kama-HTTPServer/include -I/home/xwj/Kama-HTTPServer/HttpServer/include -I/home/xwj/Kama-HTTPServer/WebApps/GomokuServer/include -I/usr/include/mysql-cppconn-8 -I/usr/include/mysql -std=gnu++17 -o CMakeFiles/simple_server.dir/WebApps/GomokuServer/src/main.cpp.o -c /home/xwj/Kama-HTTPServer/WebApps/GomokuServer/src/main.cpp",
+  "file": "/home/xwj/Kama-HTTPServer/WebApps/GomokuServer/src/main.cpp",
+  "output": "CMakeFiles/simple_server.dir/WebApps/GomokuServer/src/main.cpp.o"
+},
+{
+  "directory": "/home/xwj/Kama-HTTPServer/build",
+  "command": "/usr/bin/c++  -I/home/xwj/Kama-HTTPServer -I/home/xwj/Kama-HTTPServer/include -I/home/xwj/Kama-HTTPServer/HttpServer/include -I/home/xwj/Kama-HTTPServer/WebApps/GomokuServer/include -I/usr/include/mysql-cppconn-8 -I/usr/include/mysql -std=gnu++17 -o CMakeFiles/simple_server.dir/HttpServer/src/http/HttpContext.cpp.o -c /home/xwj/Kama-HTTPServer/HttpServer/src/http/HttpContext.cpp",
+  "file": "/home/xwj/Kama-HTTPServer/HttpServer/src/http/HttpContext.cpp",
+  "output": "CMakeFiles/simple_server.dir/HttpServer/src/http/HttpContext.cpp.o"
+},
+{
+  "directory": "/home/xwj/Kama-HTTPServer/build",
+  "command": "/usr/bin/c++  -I/home/xwj/Kama-HTTPServer -I/home/xwj/Kama-HTTPServer/include -I/home/xwj/Kama-HTTPServer/HttpServer/include -I/home/xwj/Kama-HTTPServer/WebApps/GomokuServer/include -I/usr/include/mysql-cppconn-8 -I/usr/include/mysql -std=gnu++17 -o CMakeFiles/simple_server.dir/HttpServer/src/http/HttpRequest.cpp.o -c /home/xwj/Kama-HTTPServer/HttpServer/src/http/HttpRequest.cpp",
+  "file": "/home/xwj/Kama-HTTPServer/HttpServer/src/http/HttpRequest.cpp",
+  "output": "CMakeFiles/simple_server.dir/HttpServer/src/http/HttpRequest.cpp.o"
+},
+{
+  "directory": "/home/xwj/Kama-HTTPServer/build",
+  "command": "/usr/bin/c++  -I/home/xwj/Kama-HTTPServer -I/home/xwj/Kama-HTTPServer/include -I/home/xwj/Kama-HTTPServer/HttpServer/include -I/home/xwj/Kama-HTTPServer/WebApps/GomokuServer/include -I/usr/include/mysql-cppconn-8 -I/usr/include/mysql -std=gnu++17 -o CMakeFiles/simple_server.dir/HttpServer/src/http/HttpResponse.cpp.o -c /home/xwj/Kama-HTTPServer/HttpServer/src/http/HttpResponse.cpp",
+  "file": "/home/xwj/Kama-HTTPServer/HttpServer/src/http/HttpResponse.cpp",
+  "output": "CMakeFiles/simple_server.dir/HttpServer/src/http/HttpResponse.cpp.o"
+},
+{
+  "directory": "/home/xwj/Kama-HTTPServer/build",
+  "command": "/usr/bin/c++  -I/home/xwj/Kama-HTTPServer -I/home/xwj/Kama-HTTPServer/include -I/home/xwj/Kama-HTTPServer/HttpServer/include -I/home/xwj/Kama-HTTPServer/WebApps/GomokuServer/include -I/usr/include/mysql-cppconn-8 -I/usr/include/mysql -std=gnu++17 -o CMakeFiles/simple_server.dir/HttpServer/src/http/HttpServer.cpp.o -c /home/xwj/Kama-HTTPServer/HttpServer/src/http/HttpServer.cpp",
+  "file": "/home/xwj/Kama-HTTPServer/HttpServer/src/http/HttpServer.cpp",
+  "output": "CMakeFiles/simple_server.dir/HttpServer/src/http/HttpServer.cpp.o"
+},
+{
+  "directory": "/home/xwj/Kama-HTTPServer/build",
+  "command": "/usr/bin/c++  -I/home/xwj/Kama-HTTPServer -I/home/xwj/Kama-HTTPServer/include -I/home/xwj/Kama-HTTPServer/HttpServer/include -I/home/xwj/Kama-HTTPServer/WebApps/GomokuServer/include -I/usr/include/mysql-cppconn-8 -I/usr/include/mysql -std=gnu++17 -o CMakeFiles/simple_server.dir/HttpServer/src/middleware/MiddlewareChain.cpp.o -c /home/xwj/Kama-HTTPServer/HttpServer/src/middleware/MiddlewareChain.cpp",
+  "file": "/home/xwj/Kama-HTTPServer/HttpServer/src/middleware/MiddlewareChain.cpp",
+  "output": "CMakeFiles/simple_server.dir/HttpServer/src/middleware/MiddlewareChain.cpp.o"
+},
+{
+  "directory": "/home/xwj/Kama-HTTPServer/build",
+  "command": "/usr/bin/c++  -I/home/xwj/Kama-HTTPServer -I/home/xwj/Kama-HTTPServer/include -I/home/xwj/Kama-HTTPServer/HttpServer/include -I/home/xwj/Kama-HTTPServer/WebApps/GomokuServer/include -I/usr/include/mysql-cppconn-8 -I/usr/include/mysql -std=gnu++17 -o CMakeFiles/simple_server.dir/HttpServer/src/middleware/cors/CorsMiddleware.cpp.o -c /home/xwj/Kama-HTTPServer/HttpServer/src/middleware/cors/CorsMiddleware.cpp",
+  "file": "/home/xwj/Kama-HTTPServer/HttpServer/src/middleware/cors/CorsMiddleware.cpp",
+  "output": "CMakeFiles/simple_server.dir/HttpServer/src/middleware/cors/CorsMiddleware.cpp.o"
+},
+{
+  "directory": "/home/xwj/Kama-HTTPServer/build",
+  "command": "/usr/bin/c++  -I/home/xwj/Kama-HTTPServer -I/home/xwj/Kama-HTTPServer/include -I/home/xwj/Kama-HTTPServer/HttpServer/include -I/home/xwj/Kama-HTTPServer/WebApps/GomokuServer/include -I/usr/include/mysql-cppconn-8 -I/usr/include/mysql -std=gnu++17 -o CMakeFiles/simple_server.dir/HttpServer/src/router/Router.cpp.o -c /home/xwj/Kama-HTTPServer/HttpServer/src/router/Router.cpp",
+  "file": "/home/xwj/Kama-HTTPServer/HttpServer/src/router/Router.cpp",
+  "output": "CMakeFiles/simple_server.dir/HttpServer/src/router/Router.cpp.o"
+},
+{
+  "directory": "/home/xwj/Kama-HTTPServer/build",
+  "command": "/usr/bin/c++  -I/home/xwj/Kama-HTTPServer -I/home/xwj/Kama-HTTPServer/include -I/home/xwj/Kama-HTTPServer/HttpServer/include -I/home/xwj/Kama-HTTPServer/WebApps/GomokuServer/include -I/usr/include/mysql-cppconn-8 -I/usr/include/mysql -std=gnu++17 -o CMakeFiles/simple_server.dir/HttpServer/src/session/Session.cpp.o -c /home/xwj/Kama-HTTPServer/HttpServer/src/session/Session.cpp",
+  "file": "/home/xwj/Kama-HTTPServer/HttpServer/src/session/Session.cpp",
+  "output": "CMakeFiles/simple_server.dir/HttpServer/src/session/Session.cpp.o"
+},
+{
+  "directory": "/home/xwj/Kama-HTTPServer/build",
+  "command": "/usr/bin/c++  -I/home/xwj/Kama-HTTPServer -I/home/xwj/Kama-HTTPServer/include -I/home/xwj/Kama-HTTPServer/HttpServer/include -I/home/xwj/Kama-HTTPServer/WebApps/GomokuServer/include -I/usr/include/mysql-cppconn-8 -I/usr/include/mysql -std=gnu++17 -o CMakeFiles/simple_server.dir/HttpServer/src/session/SessionManager.cpp.o -c /home/xwj/Kama-HTTPServer/HttpServer/src/session/SessionManager.cpp",
+  "file": "/home/xwj/Kama-HTTPServer/HttpServer/src/session/SessionManager.cpp",
+  "output": "CMakeFiles/simple_server.dir/HttpServer/src/session/SessionManager.cpp.o"
+},
+{
+  "directory": "/home/xwj/Kama-HTTPServer/build",
+  "command": "/usr/bin/c++  -I/home/xwj/Kama-HTTPServer -I/home/xwj/Kama-HTTPServer/include -I/home/xwj/Kama-HTTPServer/HttpServer/include -I/home/xwj/Kama-HTTPServer/WebApps/GomokuServer/include -I/usr/include/mysql-cppconn-8 -I/usr/include/mysql -std=gnu++17 -o CMakeFiles/simple_server.dir/HttpServer/src/session/SessionStorage.cpp.o -c /home/xwj/Kama-HTTPServer/HttpServer/src/session/SessionStorage.cpp",
+  "file": "/home/xwj/Kama-HTTPServer/HttpServer/src/session/SessionStorage.cpp",
+  "output": "CMakeFiles/simple_server.dir/HttpServer/src/session/SessionStorage.cpp.o"
+},
+{
+  "directory": "/home/xwj/Kama-HTTPServer/build",
+  "command": "/usr/bin/c++  -I/home/xwj/Kama-HTTPServer -I/home/xwj/Kama-HTTPServer/include -I/home/xwj/Kama-HTTPServer/HttpServer/include -I/home/xwj/Kama-HTTPServer/WebApps/GomokuServer/include -I/usr/include/mysql-cppconn-8 -I/usr/include/mysql -std=gnu++17 -o CMakeFiles/simple_server.dir/HttpServer/src/ssl/SslConfig.cpp.o -c /home/xwj/Kama-HTTPServer/HttpServer/src/ssl/SslConfig.cpp",
+  "file": "/home/xwj/Kama-HTTPServer/HttpServer/src/ssl/SslConfig.cpp",
+  "output": "CMakeFiles/simple_server.dir/HttpServer/src/ssl/SslConfig.cpp.o"
+},
+{
+  "directory": "/home/xwj/Kama-HTTPServer/build",
+  "command": "/usr/bin/c++  -I/home/xwj/Kama-HTTPServer -I/home/xwj/Kama-HTTPServer/include -I/home/xwj/Kama-HTTPServer/HttpServer/include -I/home/xwj/Kama-HTTPServer/WebApps/GomokuServer/include -I/usr/include/mysql-cppconn-8 -I/usr/include/mysql -std=gnu++17 -o CMakeFiles/simple_server.dir/HttpServer/src/ssl/SslConnection.cpp.o -c /home/xwj/Kama-HTTPServer/HttpServer/src/ssl/SslConnection.cpp",
+  "file": "/home/xwj/Kama-HTTPServer/HttpServer/src/ssl/SslConnection.cpp",
+  "output": "CMakeFiles/simple_server.dir/HttpServer/src/ssl/SslConnection.cpp.o"
+},
+{
+  "directory": "/home/xwj/Kama-HTTPServer/build",
+  "command": "/usr/bin/c++  -I/home/xwj/Kama-HTTPServer -I/home/xwj/Kama-HTTPServer/include -I/home/xwj/Kama-HTTPServer/HttpServer/include -I/home/xwj/Kama-HTTPServer/WebApps/GomokuServer/include -I/usr/include/mysql-cppconn-8 -I/usr/include/mysql -std=gnu++17 -o CMakeFiles/simple_server.dir/HttpServer/src/ssl/SslContext.cpp.o -c /home/xwj/Kama-HTTPServer/HttpServer/src/ssl/SslContext.cpp",
+  "file": "/home/xwj/Kama-HTTPServer/HttpServer/src/ssl/SslContext.cpp",
+  "output": "CMakeFiles/simple_server.dir/HttpServer/src/ssl/SslContext.cpp.o"
+},
+{
+  "directory": "/home/xwj/Kama-HTTPServer/build",
+  "command": "/usr/bin/c++  -I/home/xwj/Kama-HTTPServer -I/home/xwj/Kama-HTTPServer/include -I/home/xwj/Kama-HTTPServer/HttpServer/include -I/home/xwj/Kama-HTTPServer/WebApps/GomokuServer/include -I/usr/include/mysql-cppconn-8 -I/usr/include/mysql -std=gnu++17 -o CMakeFiles/simple_server.dir/HttpServer/src/utils/db/DbConnection.cpp.o -c /home/xwj/Kama-HTTPServer/HttpServer/src/utils/db/DbConnection.cpp",
+  "file": "/home/xwj/Kama-HTTPServer/HttpServer/src/utils/db/DbConnection.cpp",
+  "output": "CMakeFiles/simple_server.dir/HttpServer/src/utils/db/DbConnection.cpp.o"
+},
+{
+  "directory": "/home/xwj/Kama-HTTPServer/build",
+  "command": "/usr/bin/c++  -I/home/xwj/Kama-HTTPServer -I/home/xwj/Kama-HTTPServer/include -I/home/xwj/Kama-HTTPServer/HttpServer/include -I/home/xwj/Kama-HTTPServer/WebApps/GomokuServer/include -I/usr/include/mysql-cppconn-8 -I/usr/include/mysql -std=gnu++17 -o CMakeFiles/simple_server.dir/HttpServer/src/utils/db/DbConnectionPool.cpp.o -c /home/xwj/Kama-HTTPServer/HttpServer/src/utils/db/DbConnectionPool.cpp",
+  "file": "/home/xwj/Kama-HTTPServer/HttpServer/src/utils/db/DbConnectionPool.cpp",
+  "output": "CMakeFiles/simple_server.dir/HttpServer/src/utils/db/DbConnectionPool.cpp.o"
+},
+{
+  "directory": "/home/xwj/Kama-HTTPServer/build",
+  "command": "/usr/bin/c++  -I/home/xwj/Kama-HTTPServer -I/home/xwj/Kama-HTTPServer/include -I/home/xwj/Kama-HTTPServer/HttpServer/include -I/home/xwj/Kama-HTTPServer/WebApps/GomokuServer/include -I/usr/include/mysql-cppconn-8 -I/usr/include/mysql -std=gnu++17 -o CMakeFiles/simple_server.dir/WebApps/GomokuServer/src/AiGame.cpp.o -c /home/xwj/Kama-HTTPServer/WebApps/GomokuServer/src/AiGame.cpp",
+  "file": "/home/xwj/Kama-HTTPServer/WebApps/GomokuServer/src/AiGame.cpp",
+  "output": "CMakeFiles/simple_server.dir/WebApps/GomokuServer/src/AiGame.cpp.o"
+},
+{
+  "directory": "/home/xwj/Kama-HTTPServer/build",
+  "command": "/usr/bin/c++  -I/home/xwj/Kama-HTTPServer -I/home/xwj/Kama-HTTPServer/include -I/home/xwj/Kama-HTTPServer/HttpServer/include -I/home/xwj/Kama-HTTPServer/WebApps/GomokuServer/include -I/usr/include/mysql-cppconn-8 -I/usr/include/mysql -std=gnu++17 -o CMakeFiles/simple_server.dir/WebApps/GomokuServer/src/GomokuServer.cpp.o -c /home/xwj/Kama-HTTPServer/WebApps/GomokuServer/src/GomokuServer.cpp",
+  "file": "/home/xwj/Kama-HTTPServer/WebApps/GomokuServer/src/GomokuServer.cpp",
+  "output": "CMakeFiles/simple_server.dir/WebApps/GomokuServer/src/GomokuServer.cpp.o"
+},
+{
+  "directory": "/home/xwj/Kama-HTTPServer/build",
+  "command": "/usr/bin/c++  -I/home/xwj/Kama-HTTPServer -I/home/xwj/Kama-HTTPServer/include -I/home/xwj/Kama-HTTPServer/HttpServer/include -I/home/xwj/Kama-HTTPServer/WebApps/GomokuServer/include -I/usr/include/mysql-cppconn-8 -I/usr/include/mysql -std=gnu++17 -o CMakeFiles/simple_server.dir/WebApps/GomokuServer/src/handlers/AiGameMoveHandler.cpp.o -c /home/xwj/Kama-HTTPServer/WebApps/GomokuServer/src/handlers/AiGameMoveHandler.cpp",
+  "file": "/home/xwj/Kama-HTTPServer/WebApps/GomokuServer/src/handlers/AiGameMoveHandler.cpp",
+  "output": "CMakeFiles/simple_server.dir/WebApps/GomokuServer/src/handlers/AiGameMoveHandler.cpp.o"
+},
+{
+  "directory": "/home/xwj/Kama-HTTPServer/build",
+  "command": "/usr/bin/c++  -I/home/xwj/Kama-HTTPServer -I/home/xwj/Kama-HTTPServer/include -I/home/xwj/Kama-HTTPServer/HttpServer/include -I/home/xwj/Kama-HTTPServer/WebApps/GomokuServer/include -I/usr/include/mysql-cppconn-8 -I/usr/include/mysql -std=gnu++17 -o CMakeFiles/simple_server.dir/WebApps/GomokuServer/src/handlers/AiGameStartHandler.cpp.o -c /home/xwj/Kama-HTTPServer/WebApps/GomokuServer/src/handlers/AiGameStartHandler.cpp",
+  "file": "/home/xwj/Kama-HTTPServer/WebApps/GomokuServer/src/handlers/AiGameStartHandler.cpp",
+  "output": "CMakeFiles/simple_server.dir/WebApps/GomokuServer/src/handlers/AiGameStartHandler.cpp.o"
+},
+{
+  "directory": "/home/xwj/Kama-HTTPServer/build",
+  "command": "/usr/bin/c++  -I/home/xwj/Kama-HTTPServer -I/home/xwj/Kama-HTTPServer/include -I/home/xwj/Kama-HTTPServer/HttpServer/include -I/home/xwj/Kama-HTTPServer/WebApps/GomokuServer/include -I/usr/include/mysql-cppconn-8 -I/usr/include/mysql -std=gnu++17 -o CMakeFiles/simple_server.dir/WebApps/GomokuServer/src/handlers/EntryHandler.cpp.o -c /home/xwj/Kama-HTTPServer/WebApps/GomokuServer/src/handlers/EntryHandler.cpp",
+  "file": "/home/xwj/Kama-HTTPServer/WebApps/GomokuServer/src/handlers/EntryHandler.cpp",
+  "output": "CMakeFiles/simple_server.dir/WebApps/GomokuServer/src/handlers/EntryHandler.cpp.o"
+},
+{
+  "directory": "/home/xwj/Kama-HTTPServer/build",
+  "command": "/usr/bin/c++  -I/home/xwj/Kama-HTTPServer -I/home/xwj/Kama-HTTPServer/include -I/home/xwj/Kama-HTTPServer/HttpServer/include -I/home/xwj/Kama-HTTPServer/WebApps/GomokuServer/include -I/usr/include/mysql-cppconn-8 -I/usr/include/mysql -std=gnu++17 -o CMakeFiles/simple_server.dir/WebApps/GomokuServer/src/handlers/GameBackendHandler.cpp.o -c /home/xwj/Kama-HTTPServer/WebApps/GomokuServer/src/handlers/GameBackendHandler.cpp",
+  "file": "/home/xwj/Kama-HTTPServer/WebApps/GomokuServer/src/handlers/GameBackendHandler.cpp",
+  "output": "CMakeFiles/simple_server.dir/WebApps/GomokuServer/src/handlers/GameBackendHandler.cpp.o"
+},
+{
+  "directory": "/home/xwj/Kama-HTTPServer/build",
+  "command": "/usr/bin/c++  -I/home/xwj/Kama-HTTPServer -I/home/xwj/Kama-HTTPServer/include -I/home/xwj/Kama-HTTPServer/HttpServer/include -I/home/xwj/Kama-HTTPServer/WebApps/GomokuServer/include -I/usr/include/mysql-cppconn-8 -I/usr/include/mysql -std=gnu++17 -o CMakeFiles/simple_server.dir/WebApps/GomokuServer/src/handlers/LoginHandler.cpp.o -c /home/xwj/Kama-HTTPServer/WebApps/GomokuServer/src/handlers/LoginHandler.cpp",
+  "file": "/home/xwj/Kama-HTTPServer/WebApps/GomokuServer/src/handlers/LoginHandler.cpp",
+  "output": "CMakeFiles/simple_server.dir/WebApps/GomokuServer/src/handlers/LoginHandler.cpp.o"
+},
+{
+  "directory": "/home/xwj/Kama-HTTPServer/build",
+  "command": "/usr/bin/c++  -I/home/xwj/Kama-HTTPServer -I/home/xwj/Kama-HTTPServer/include -I/home/xwj/Kama-HTTPServer/HttpServer/include -I/home/xwj/Kama-HTTPServer/WebApps/GomokuServer/include -I/usr/include/mysql-cppconn-8 -I/usr/include/mysql -std=gnu++17 -o CMakeFiles/simple_server.dir/WebApps/GomokuServer/src/handlers/Loginout.cpp.o -c /home/xwj/Kama-HTTPServer/WebApps/GomokuServer/src/handlers/Loginout.cpp",
+  "file": "/home/xwj/Kama-HTTPServer/WebApps/GomokuServer/src/handlers/Loginout.cpp",
+  "output": "CMakeFiles/simple_server.dir/WebApps/GomokuServer/src/handlers/Loginout.cpp.o"
+},
+{
+  "directory": "/home/xwj/Kama-HTTPServer/build",
+  "command": "/usr/bin/c++  -I/home/xwj/Kama-HTTPServer -I/home/xwj/Kama-HTTPServer/include -I/home/xwj/Kama-HTTPServer/HttpServer/include -I/home/xwj/Kama-HTTPServer/WebApps/GomokuServer/include -I/usr/include/mysql-cppconn-8 -I/usr/include/mysql -std=gnu++17 -o CMakeFiles/simple_server.dir/WebApps/GomokuServer/src/handlers/MenuHandler.cpp.o -c /home/xwj/Kama-HTTPServer/WebApps/GomokuServer/src/handlers/MenuHandler.cpp",
+  "file": "/home/xwj/Kama-HTTPServer/WebApps/GomokuServer/src/handlers/MenuHandler.cpp",
+  "output": "CMakeFiles/simple_server.dir/WebApps/GomokuServer/src/handlers/MenuHandler.cpp.o"
+},
+{
+  "directory": "/home/xwj/Kama-HTTPServer/build",
+  "command": "/usr/bin/c++  -I/home/xwj/Kama-HTTPServer -I/home/xwj/Kama-HTTPServer/include -I/home/xwj/Kama-HTTPServer/HttpServer/include -I/home/xwj/Kama-HTTPServer/WebApps/GomokuServer/include -I/usr/include/mysql-cppconn-8 -I/usr/include/mysql -std=gnu++17 -o CMakeFiles/simple_server.dir/WebApps/GomokuServer/src/handlers/RegisterHandler.cpp.o -c /home/xwj/Kama-HTTPServer/WebApps/GomokuServer/src/handlers/RegisterHandler.cpp",
+  "file": "/home/xwj/Kama-HTTPServer/WebApps/GomokuServer/src/handlers/RegisterHandler.cpp",
+  "output": "CMakeFiles/simple_server.dir/WebApps/GomokuServer/src/handlers/RegisterHandler.cpp.o"
+}
+]

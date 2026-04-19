@@ -10,6 +10,7 @@
 #include "../../../HttpServer/include/http/HttpRequest.h"
 #include "../../../HttpServer/include/http/HttpResponse.h"
 #include "../../../HttpServer/include/http/HttpServer.h"
+#include "../../../HttpServer/include/middleware/cors/CorsMiddleware.h"
 
 using namespace http;
 

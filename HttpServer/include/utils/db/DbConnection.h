@@ -53,7 +53,7 @@ public:
     }
     
     template<typename... Args>
-    int executeUpdate(const std::string& sql, Args&&... args)
+    int executeUpdate(const std::string& sql, Args&&... args)//返回受影响行数 int类型
     {
         std::lock_guard<std::mutex> lock(mutex_);
         try 

@@ -13,7 +13,7 @@ struct CorsConfig
     std::vector<std::string> allowedOrigins;
     std::vector<std::string> allowedMethods;
     std::vector<std::string> allowedHeaders;
-    bool allowCredentials = false;
+    bool allowCredentials = false; // 是否允许携带凭证
     int maxAge = 3600;
     
     static CorsConfig defaultConfig() 

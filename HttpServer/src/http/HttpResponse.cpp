@@ -8,7 +8,15 @@ void HttpResponse::appendToBuffer(muduo::net::Buffer* outputBuf) const
     // HttpResponse封装的信息格式化输出
     char buf[32]; 
     // 为什么不把状态信息放入格式化字符串中，因为状态信息有长有短，不方便定义一个固定大小的内存存储
-    snprintf(buf, sizeof buf, "%s %d ", httpVersion_.c_str(), statusCode_);
+    // snprintf用于格式化HTTP响应的起始行（即 "HTTP/1.1 200 "），
+    //      - 第1个参数 buf：用于存放格式化后的字符串，类型为char数组
+    //      - 第2个参数 sizeof buf：指定buf的大小，防止溢出
+    //      - 第3个参数 "%s %d "：格式字符串，%s表示HTTP版本字符串，%d为状态码数字
+    //      - 第4个参数 httpVersion_.c_str()：HTTP版本（如"HTTP/1.1"），是std::string转为C字符串!!snprintf 是C语言的标准函数
+    //      - 第5个参数 statusCode_：HTTP状态码（如200、404等），枚举类型，数值输出
+    snprintf(buf, sizeof buf, "%s %d ", httpVersion_.c_str(), statusCode_);//sizeof 是C++的关键字（运算符），而不是函数，所以： 对类型使用时需要括号.对变量/对象使用时可以省略括号
+
+   
     
     outputBuf->append(buf);
     outputBuf->append(statusMessage_);
@@ -25,7 +33,7 @@ void HttpResponse::appendToBuffer(muduo::net::Buffer* outputBuf) const
         outputBuf->append("Connection: Keep-Alive\r\n");
     }
 
-    for (const auto& header : headers_)
+    for (const auto& header : headers_)//按 key 排序，因此头字段顺序是字典序
     { // 为什么这里不用格式化字符串？因为key和value的长度不定
         outputBuf->append(header.first);
         outputBuf->append(": "); 

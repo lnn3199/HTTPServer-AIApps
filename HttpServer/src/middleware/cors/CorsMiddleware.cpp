@@ -14,6 +14,7 @@ CorsMiddleware::CorsMiddleware(const CorsConfig& config) : config_(config) {}
 void CorsMiddleware::before(HttpRequest& request) 
 {
     LOG_DEBUG << "CorsMiddleware::before - Processing request";
+    requestOrigin_ = request.getHeader("Origin");
     
     if (request.method() == HttpRequest::Method::kOptions) 
     {
@@ -27,21 +28,17 @@ void CorsMiddleware::before(HttpRequest& request)
 void CorsMiddleware::after(HttpResponse& response) 
 {
     LOG_DEBUG << "CorsMiddleware::after - Processing response";
-    
-    // 直接添加CORS头，简化处理逻辑
-    if (!config_.allowedOrigins.empty()) 
+
+    const std::string allowOrigin = resolveAllowOrigin(requestOrigin_);
+    if (allowOrigin.empty())
     {
-        // 如果允许所有源
-        if (std::find(config_.allowedOrigins.begin(), config_.allowedOrigins.end(), "*") 
-            != config_.allowedOrigins.end()) 
-        {
-            addCorsHeaders(response, "*");
-        } 
-        else 
-        {
-            // 添加第一个允许的源
-            addCorsHeaders(response, config_.allowedOrigins[0]);
-        }
+        return;
+    }
+
+    addCorsHeaders(response, allowOrigin);
+    if (allowOrigin != "*")
+    {
+        response.addHeader("Vary", "Origin");
     }
 }
 
@@ -54,19 +51,44 @@ bool CorsMiddleware::isOriginAllowed(const std::string& origin) const
                     config_.allowedOrigins.end(), origin) != config_.allowedOrigins.end();
 }
 
+std::string CorsMiddleware::resolveAllowOrigin(const std::string& requestOrigin) const
+{
+    if (requestOrigin.empty() || !isOriginAllowed(requestOrigin))
+    {
+        return "";
+    }
+
+    const bool wildcardAllowed =
+        std::find(config_.allowedOrigins.begin(), config_.allowedOrigins.end(), "*") != config_.allowedOrigins.end();
+
+    if (wildcardAllowed && !config_.allowCredentials)
+    {
+        return "*";
+    }
+
+    return requestOrigin;
+}
+
+// 该方法用于处理 CORS 跨域“预检请求”(Preflight Request)。预检请求是浏览器针对跨域 HTTP 请求，先发送一个 OPTIONS 方法、带有特殊头部的请求（如 Origin、Access-Control-Request-Method、Access-Control-Request-Headers）以获知服务器是否允许实际的跨域操作。
+
 void CorsMiddleware::handlePreflightRequest(const HttpRequest& request, 
                                           HttpResponse& response) 
 {
     const std::string& origin = request.getHeader("Origin");
-    
-    if (!isOriginAllowed(origin)) 
+
+    const std::string allowOrigin = resolveAllowOrigin(origin);
+    if (allowOrigin.empty())
     {
         LOG_WARN << "Origin not allowed: " << origin;
         response.setStatusCode(HttpResponse::k403Forbidden);
         return;
     }
 
-    addCorsHeaders(response, origin);
+    addCorsHeaders(response, allowOrigin);
+    if (allowOrigin != "*")
+    {
+        response.addHeader("Vary", "Origin");
+    }
     response.setStatusCode(HttpResponse::k204NoContent);
     LOG_INFO << "Preflight request processed successfully";
 }

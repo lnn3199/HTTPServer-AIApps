@@ -63,9 +63,7 @@ void SessionManager::destroySession(const std::string& sessionId)
 
 void SessionManager::cleanExpiredSessions()
 {
-    // 注意：这个实现依赖于具体的存储实现
-    // 对于内存存储，可以在加载时检查是否过期
-    // 对于其他存储的实现，可能需要定期清理过期会话
+    storage_->cleanExpired();
 }
 
 std::string SessionManager::getSessionIdFromCookie(const HttpRequest& req)

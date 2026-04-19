@@ -1,30 +1,29 @@
 #pragma once
 #include "SslConfig.h"
 #include <openssl/ssl.h>
-#include <memory>
 #include <muduo/base/noncopyable.h>
 
-namespace ssl 
+namespace ssl
 {
 
-class SslContext : muduo::noncopyable 
+class SslContext : muduo::noncopyable
 {
 public:
     explicit SslContext(const SslConfig& config);
     ~SslContext();
 
     bool initialize();
-    SSL_CTX* getNativeHandle() { return ctx_; }
+    SSL_CTX* getNativeHandle() { return ctx_; }//获取原始SSL_CTX指针
 
 private:
-    bool loadCertificates();
-    bool setupProtocol();
-    void setupSessionCache();
+    bool loadCertificates();//加载证书和私钥
+    bool setupProtocol();//设置协议版本和相关参数
+    void setupSessionCache();//配置 session cache 参数
     static void handleSslError(const char* msg);
 
 private:
-    SSL_CTX*  ctx_; // SSL上下文
-    SslConfig config_; // SSL配置
+    SSL_CTX*  ctx_;//服务端 TLS 上下文
+    SslConfig config_;
 };
 
 } // namespace ssl
