@@ -1,0 +1,8 @@
+# Build
+build/
+cmake-build-*/
+
+# Compiled / objects
+*.o
+*.a
+*.so

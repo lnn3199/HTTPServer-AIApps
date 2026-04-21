@@ -1,10 +1,10 @@
-# HTTPServer
+# HTTPServer-AIApps
 
-顶层 **CMake 工程名**为 **`HTTPServer`**（与源码目录 **`HttpServer/`** 不同：后者指框架库代码目录）。
+顶层 **CMake 工程名**为 **`HTTPServer-AIApps`**（与源码目录 **`HttpServer/`** 不同：后者指框架库代码目录）。
 
 基于 **Muduo** 的 C++17 HTTP 服务框架：事件驱动、路由与中间件、会话、MySQL 连接池，以及基于 **OpenSSL** 的可选 **HTTPS**（`SslConfig` / `SslContext` / `SslConnection`）。
 
-**`HttpServer/` 为框架实现**；本仓库默认挂载的业务应用为 **`AIApps/ChatServer/`**（多模型对话、工具注册、RAG、语音、图像、RabbitMQ 异步入库等），与框架解耦，可按同样方式替换为其它业务。
+**`HttpServer/` 为框架实现**；本仓库默认挂载的业务应用为 **`AIApps/ChatServer/`**（多模型对话、工具注册、RAG、语音、图像识别、RabbitMQ 异步入库等），与框架解耦，可按同样方式替换为其它业务。
 
 默认可执行文件：**`http_server`**（`HttpServer` + `AIApps/ChatServer`）。
 
@@ -21,6 +21,7 @@ HttpServer/
   include|src/utils/         # MysqlUtil、JsonUtil、FileUtil；utils/db 连接池
   include|src/ssl/           # SslConfig、SslContext、SslConnection
 AIApps/ChatServer/           # 业务：ChatServer、handlers、AIUtil、resource（页面与 config.json）
+  src/utils/PasswordHash.cpp # 用户密码：PBKDF2-HMAC-SHA256（注册与登录校验）
 CMakeLists.txt               # 生成 http_server
 ```
 
@@ -47,6 +48,31 @@ CMakeLists.txt               # 生成 http_server
 | 消息队列 | **RabbitMQ C 库** `rabbitmq`、**SimpleAmqpClient**（异步入库） |
 
 CMake 中 MySQL 头路径以常见 Linux 路径为例；若环境不同请修改 `CMakeLists.txt` 中的 `MYSQL_INCLUDES` 等。
+
+---
+
+## 认证与密码存储（Chat）
+
+- 新注册用户：密码以 **PBKDF2-HMAC-SHA256**（高迭代次数 + 随机盐）写入 `users.password` 字段，格式见 `AIApps/ChatServer/src/utils/PasswordHash.cpp`。
+- 旧数据若为 `sha256$...`，登录校验成功后会 **自动升级** 为 PBKDF2；**不再接受数据库中的明文密码**。
+- 传输层安全依赖部署侧 **HTTPS** 与网络隔离；应用内 MySQL 连接参数请按环境配置，避免将生产口令硬编码进仓库。
+
+---
+
+## 静态资源与前端页面
+
+业务静态页与配置均在 **`AIApps/ChatServer/resource/`**：
+
+| 文件 | 作用 |
+|------|------|
+| `entry.html` | 登录 / 注册（内联 CSS，无单独配图文件） |
+| `menu.html` | 进入各子服务入口 |
+| `AI.html` | AI 对话界面 |
+| `upload.html` | 图像识别上传页 |
+| `config.json` | 业务与模型等配置 |
+| `schema.sql` | 示例库表结构 |
+
+**关于「AI 登录配图」**：登录界面由 `entry.html` 的样式与布局直接渲染，**工程内没有单独的「登录插图」图片路径**；若需要品牌图或背景图，可将资源放在 `resource/`（或子目录）并在该 HTML 中增加 `<img>` 或 `background-image` 引用。
 
 ---
 

@@ -2,6 +2,7 @@
 #include <memory>
 #include <string>
 #include <mutex>
+#include <type_traits>
 #include <cppconn/connection.h>
 #include <cppconn/prepared_statement.h>
 #include <cppconn/resultset.h>
@@ -77,21 +78,22 @@ private:
      // 辅助函数：递归终止条件
     void bindParams(sql::PreparedStatement*, int) {}
     
-    // 辅助函数：绑定参数
-    template<typename T, typename... Args>
-    void bindParams(sql::PreparedStatement* stmt, int index, 
-                   T&& value, Args&&... args) 
-    {
-        stmt->setString(index, std::to_string(std::forward<T>(value)));
-        bindParams(stmt, index + 1, std::forward<Args>(args)...);
-    }
-    
-    // 特化 string 类型的参数绑定
+    // 特化 string 类型的参数绑定（须先于通用模板，避免 string& 匹配 T&& 后误用 to_string）
     template<typename... Args>
     void bindParams(sql::PreparedStatement* stmt, int index, 
                    const std::string& value, Args&&... args) 
     {
         stmt->setString(index, value);
+        bindParams(stmt, index + 1, std::forward<Args>(args)...);
+    }
+
+    // 辅助函数：绑定参数（非 string）
+    template<typename T, typename... Args>
+    std::enable_if_t<!std::is_same<std::decay_t<T>, std::string>::value, void>
+    bindParams(sql::PreparedStatement* stmt, int index, 
+                   T&& value, Args&&... args) 
+    {
+        stmt->setString(index, std::to_string(std::forward<T>(value)));
         bindParams(stmt, index + 1, std::forward<Args>(args)...);
     }
 

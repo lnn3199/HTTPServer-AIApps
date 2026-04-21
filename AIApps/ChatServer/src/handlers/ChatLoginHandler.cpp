@@ -1,4 +1,5 @@
 #include "../include/handlers/ChatLoginHandler.h"
+#include "../include/utils/PasswordHash.h"
 
 void ChatLoginHandler::handle(const http::HttpRequest& req, http::HttpResponse* resp)
 {
@@ -56,7 +57,7 @@ void ChatLoginHandler::handle(const http::HttpRequest& req, http::HttpResponse* 
 
                 json failureResp;
                 failureResp["success"] = false;
-                failureResp["error"] = "˺ط¼";
+                failureResp["error"] = "Account already logged in elsewhere";
                 std::string failureBody = failureResp.dump(4);
 
                 resp->setStatusLine(req.getVersion(), http::HttpResponse::k403Forbidden, "Forbidden");
@@ -102,15 +103,19 @@ void ChatLoginHandler::handle(const http::HttpRequest& req, http::HttpResponse* 
 int ChatLoginHandler::queryUserId(const std::string& username, const std::string& password)
 {
 
-    std::string sql = "SELECT id FROM users WHERE username = ? AND password = ?";
-    // std::vector<std::string> params = {username, password};
-    auto res = mysqlUtil_.executeQuery(sql, username, password);
-    if (res->next())
-    {
-        int id = res->getInt("id");
-        return id;
+    std::string sql = "SELECT id, password FROM users WHERE username = ?";
+    auto res = mysqlUtil_.executeQuery(sql, username);
+    if (res->next()) {
+        const std::string storedPassword = res->getString("password");
+        const int userId = res->getInt("id");
+        std::string upgraded;
+        if (chat::verifyPassword(password, storedPassword, &upgraded)) {
+            if (!upgraded.empty()) {
+                mysqlUtil_.executeUpdate("UPDATE users SET password = ? WHERE id = ?", upgraded, userId);
+            }
+            return userId;
+        }
     }
 
     return -1;
 }
-
