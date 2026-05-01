@@ -31,11 +31,12 @@ SslConnection::SslConnection(const TcpConnectionPtr &conn, SslContext *ctx)
 
   SSL_set_mode(ssl_, SSL_MODE_ACCEPT_MOVING_WRITE_BUFFER);
   SSL_set_mode(ssl_, SSL_MODE_ENABLE_PARTIAL_WRITE);
-  // 不覆盖 TcpConnection 的 messageCallback：由 HttpServer::onMessage 统一入口，
-  // 内部再调用 onRead，解密后用 getDecryptedBuffer() 做 HTTP 解析。
+  // 不覆盖 TcpConnection 的 messageCallback：由 HttpServer::onMessage
+  // 统一入口， 内部再调用 onRead，解密后用 getDecryptedBuffer() 做 HTTP 解析。
   //
-  // SSL_write 可能返回 WANT_WRITE：密文在 writeBio_ / Muduo 输出缓冲里未排空时，
-  // 需在「本连接可继续写」时调用 drainPendingPlain 续写，否则会丢尾包。
+  // SSL_write 可能返回 WANT_WRITE：密文在 writeBio_ / Muduo
+  // 输出缓冲里未排空时， 需在「本连接可继续写」时调用 drainPendingPlain
+  // 续写，否则会丢尾包。
   conn_->setWriteCompleteCallback(
       [this](const TcpConnectionPtr &) { onWriteComplete(); });
 }
@@ -63,30 +64,52 @@ void SslConnection::flushWriteBio() {
   }
 }
 
+// 向 readBio_ 输入明文数据，供 SSL 解密。逐步解释如下：
 bool SslConnection::feedReadBio(const void *data, size_t len) {
+  // 步骤1：如果 readBio_
+  // 为空指针（尚未初始化/创建失败），只有待写入的数据长度为
+  // 0（等价于没数据），才算成功，否则直接返回失败。
   if (!readBio_) {
+    // readBio_ 未初始化时，如果 len==0 认为“没数据”，直接返回
+    // true，否则不能写数据，返回 false
     return len == 0;
   }
+  // 步骤2：如果没有任何要写入的数据，直接返回
+  // true（不用写入任何内容，也就没有失败的可能）
   if (len == 0) {
     return true;
   }
-  const auto *p = static_cast<const unsigned char *>(data);
-  size_t remain = len;
+
+  // 步骤3：准备遍历写入数据到 BIO
+  const auto *p =
+      static_cast<const unsigned char *>(data); // 输入数据指针（明文）
+  size_t remain = len;                          // 剩余待写字节
+
+  // BIO_write 操作最大只支持 int 范围的长度，所以需分块写入
   while (remain > 0) {
+    // 步骤4：本轮要写入 BIO 的最大 chunk (不超过 INT_MAX)
     int chunk =
         static_cast<int>(std::min(remain, static_cast<size_t>(INT_MAX)));
+    // 实际写入 readBio_（OpenSSL 的内存 BIO），将明文数据馈入到 SSL 解密引擎
     int w = BIO_write(readBio_, p, chunk);
+
+    // 步骤5：若写入失败（实际写入字节数与期望不符），则认为 BIO 写入异常
     if (w != chunk) {
       LOG_ERROR << "BIO_write(readBio_) failed: expected " << chunk
                 << " bytes, got " << w;
+      // 设置连接为错误状态
       state_ = SSLState::ERROR;
+      // 将 writeBio_ 里残留密文（如果有）发送出去，便于对端读取错误/关闭通知
       flushWriteBio();
+      // 主动关闭底层 TCP 连接（防止悬空/死锁）
       conn_->shutdown();
       return false;
     }
+    // 步骤6：推进指针/剩余长度，继续下一轮写入（如果还有剩余）
     p += static_cast<size_t>(w);
     remain -= static_cast<size_t>(w);
   }
+  // 步骤7：全部数据成功写入 readBio_
   return true;
 }
 
@@ -112,8 +135,7 @@ void SslConnection::drainPendingPlain() {
         std::min(pendingPlain_.size(), static_cast<size_t>(INT_MAX)));
     int n = SSL_write(ssl_, pendingPlain_.data(), chunk);
     if (n > 0) {
-      pendingPlain_.erase(pendingPlain_.begin(),
-                          pendingPlain_.begin() + n);
+      pendingPlain_.erase(pendingPlain_.begin(), pendingPlain_.begin() + n);
       flushWriteBio();
       continue;
     }
@@ -260,7 +282,8 @@ void SslConnection::onRead(const TcpConnectionPtr &conn, BufferPtr buf,
         handleError(error);
       }
     }
-    // 把 SSL write BIO 里可能缓存的加密数据发给对端；若之前有未完成的发送，尝试续写
+    // 把 SSL write BIO
+    // 里可能缓存的加密数据发给对端；若之前有未完成的发送，尝试续写
     flushWriteBio();
     drainPendingPlain();
   }
