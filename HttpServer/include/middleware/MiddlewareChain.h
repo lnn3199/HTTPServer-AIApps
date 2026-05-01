@@ -1,7 +1,9 @@
 #pragma once
 
-#include <vector>
 #include <memory>
+#include <shared_mutex>
+#include <vector>
+
 #include "Middleware.h"
 
 namespace http 
@@ -18,6 +20,7 @@ public:
 
 private:
     std::vector<std::shared_ptr<Middleware>> middlewares_;
+    mutable std::shared_mutex mutex_;
 };
 
 } // namespace middleware

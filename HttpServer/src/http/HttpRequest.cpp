@@ -1,9 +1,20 @@
 #include "../../include/http/HttpRequest.h"
 
 #include <cassert>
+#include <cctype>
 
 namespace http
 {
+namespace
+{
+void toLowerAsciiInPlace(std::string &s)
+{
+    for (char &c : s)
+    {
+        c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
+    }
+}
+} // namespace
 
 void HttpRequest::setReceiveTime(muduo::Timestamp t)
 {
@@ -123,6 +134,7 @@ void HttpRequest::setQueryParameters(const char *start, const char *end)
 void HttpRequest::addHeader(const char *start, const char *colon, const char *end)
 {
     std::string key(start, colon);
+    toLowerAsciiInPlace(key);
     ++colon;
 
     // 3. 跳过冒号后所有的空白符：while + isspace
@@ -149,7 +161,9 @@ void HttpRequest::addHeader(const char *start, const char *colon, const char *en
 std::string HttpRequest::getHeader(const std::string &field) const
 {
     std::string result;
-    auto it = headers_.find(field);
+    std::string key = field;
+    toLowerAsciiInPlace(key);
+    auto it = headers_.find(key);
     if (it != headers_.end())
     {
         result = it->second;
@@ -157,7 +171,7 @@ std::string HttpRequest::getHeader(const std::string &field) const
     return result;
 }
 
-void HttpRequest::swap(HttpRequest &that)//swap 没有交换 body/contentLength
+void HttpRequest::swap(HttpRequest &that)
 {
     std::swap(method_, that.method_);
     std::swap(path_, that.path_);
@@ -166,6 +180,8 @@ void HttpRequest::swap(HttpRequest &that)//swap 没有交换 body/contentLength
     std::swap(version_, that.version_);
     std::swap(headers_, that.headers_);
     std::swap(receiveTime_, that.receiveTime_);
+    std::swap(content_, that.content_);
+    std::swap(contentLength_, that.contentLength_);
 }
 
 } // namespace http

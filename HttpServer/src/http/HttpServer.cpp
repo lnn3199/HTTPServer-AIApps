@@ -3,11 +3,14 @@
 
 #include <functional> //std::function 是 C++11 引入的标准库头文件，提供类型安全的函数包装器 std::function。如需使用 std::function，需包含：#include <functional>
 #include <memory>
+#include <mutex>
 
 namespace http {
 
 namespace {
 constexpr char kHttp400[] = "HTTP/1.1 400 Bad Request\r\n\r\n";
+constexpr char kHttp413[] =
+    "HTTP/1.1 413 Payload Too Large\r\nConnection: close\r\n\r\n";
 }
 
 void HttpServer::sendToClient(const muduo::net::TcpConnectionPtr &conn,
@@ -16,9 +19,18 @@ void HttpServer::sendToClient(const muduo::net::TcpConnectionPtr &conn,
     return;
   }
   if (useSSL_) {
-    auto it = sslConns_.find(conn);
-    if (it != sslConns_.end() && it->second->isHandshakeCompleted()) {
-      it->second->send(data, len);
+    ssl::SslConnection *sslConn = nullptr;
+    bool ready = false;
+    {
+      std::lock_guard<std::mutex> lock(sslConnsMutex_);
+      auto it = sslConns_.find(conn);
+      if (it != sslConns_.end() && it->second->isHandshakeCompleted()) {
+        sslConn = it->second.get();
+        ready = true;
+      }
+    }
+    if (ready && sslConn) {
+      sslConn->send(data, len);
       return;
     }
     LOG_ERROR << "sendToClient: SSL enabled but connection is not ready for encrypted send";
@@ -67,7 +79,7 @@ HttpServer::HttpServer(
 // 事件，只有调用 loop() 才会进入事件驱动模式，不会立即返回。
 // 合起来，这段代码用于启动服务器、进入事件循环，实际运行 HTTP 服务器的主逻辑：
 void HttpServer::start() {
-  LOG_WARN << "HttpServer[" << server_.name() << "] starts listening on"
+  LOG_WARN << "HttpServer[" << server_.name() << "] starts listening on "
            << server_.ipPort();
   server_.start();  // 让 Muduo 开始监听并注册事件
   mainLoop_.loop(); // 阻塞进入事件循环
@@ -87,14 +99,17 @@ void HttpServer::initialize() {
   }); // 当收到数据时触发 HttpServer::onMessage
 }
 
-void HttpServer::setSslConfig(const ssl::SslConfig &config) {
-  if (useSSL_) {
-    sslCtx_ = std::make_unique<ssl::SslContext>(config);
-    if (!sslCtx_->initialize()) {
-      LOG_ERROR << "Failed to initialize SSL context";
-      abort();
-    }
+bool HttpServer::setSslConfig(const ssl::SslConfig &config) {
+  if (!useSSL_) {
+    return true;
   }
+  sslCtx_ = std::make_unique<ssl::SslContext>(config);
+  if (!sslCtx_->initialize()) {
+    LOG_ERROR << "Failed to initialize SSL context";
+    sslCtx_.reset();
+    return false;
+  }
+  return true;
 }
 
 void HttpServer::onConnection(const muduo::net::TcpConnectionPtr &conn) {
@@ -106,14 +121,21 @@ void HttpServer::onConnection(const muduo::net::TcpConnectionPtr &conn) {
         return;
       }
       auto sslConn = std::make_unique<ssl::SslConnection>(conn, sslCtx_.get());
-      sslConns_[conn] = std::move(sslConn);
-      sslConns_[conn]->startHandshake();
+      if (!sslConn->ok()) {
+        LOG_ERROR << "SslConnection init failed (SSL_new or BIO_new), closing connection";
+        conn->shutdown();
+      } else {
+        sslConn->startHandshake();
+        std::lock_guard<std::mutex> lock(sslConnsMutex_);
+        sslConns_[conn] = std::move(sslConn);
+      }
     }
     // 每条TCP连接都设置自己的HttpContext到上下文中：
     // HttpContext负责缓存和解析HTTP请求的状态
-    conn->setContext(HttpContext());
+    conn->setContext(HttpContext(maxRequestBodyBytes_));
   } else {
     if (useSSL_) {
+      std::lock_guard<std::mutex> lock(sslConnsMutex_);
       sslConns_.erase(conn);
     }
   }
@@ -124,20 +146,25 @@ void HttpServer::onMessage(const muduo::net::TcpConnectionPtr &conn,
                            muduo::Timestamp receiveTime) {
   try {
     if (useSSL_) {
-      auto it = sslConns_.find(conn);
-      if (it == sslConns_.end()) {
-        LOG_ERROR << "onMessage: useSSL but no SslConnection for this connection "
-                     "(internal state error)";
-        conn->shutdown();
+      ssl::SslConnection *sslConn = nullptr;
+      {
+        std::lock_guard<std::mutex> lock(sslConnsMutex_);
+        auto it = sslConns_.find(conn);
+        if (it == sslConns_.end()) {
+          LOG_ERROR << "onMessage: useSSL but no SslConnection for this connection "
+                       "(internal state error)";
+          conn->shutdown();
+          return;
+        }
+        sslConn = it->second.get();
+      }
+      sslConn->onRead(conn, buf, receiveTime);
+
+      if (!sslConn->isHandshakeCompleted()) {
         return;
       }
-      it->second->onRead(conn, buf, receiveTime);
 
-      if (!it->second->isHandshakeCompleted()) {
-        return;
-      }
-
-      muduo::net::Buffer *decryptedBuf = it->second->getDecryptedBuffer();
+      muduo::net::Buffer *decryptedBuf = sslConn->getDecryptedBuffer();
       if (decryptedBuf->readableBytes() == 0) {
         return;
       }
@@ -153,9 +180,13 @@ void HttpServer::onMessage(const muduo::net::TcpConnectionPtr &conn,
         boost::any_cast<HttpContext>(conn->getMutableContext());
     if (!context->parseRequest(buf, receiveTime)) // 解析一个http请求
     {
-      // 如果解析http报文过程中出错
-      sendToClient(conn, kHttp400, sizeof(kHttp400) - 1);
+      if (context->parseErrorStatus() == 413) {
+        sendToClient(conn, kHttp413, sizeof(kHttp413) - 1);
+      } else {
+        sendToClient(conn, kHttp400, sizeof(kHttp400) - 1);
+      }
       conn->shutdown();
+      return;
     }
     // 如果buf缓冲区中解析出一个完整的数据包才封装响应报文
     if (context->gotAll()) {
@@ -183,11 +214,8 @@ void HttpServer::onRequest(const muduo::net::TcpConnectionPtr &conn,
   // 可以给response设置一个成员，判断是否请求的是文件，如果是文件设置为true，并且存在文件位置在这里send出去。
   muduo::net::Buffer buf;
   response.appendToBuffer(&buf);
-  // 打印完整的响应内容用于调试
-
-  // buf.toStringPiece().as_string()
-  // 的作用是将muduo::net::Buffer内容转为std::string，便于直接输出请求响应内容。
-  LOG_INFO << "Sending response:\n" << buf.toStringPiece().as_string();
+  LOG_INFO << "response " << static_cast<int>(response.getStatusCode()) << " "
+           << req.path() << " totalBytes=" << buf.readableBytes();
 
   sendToClient(conn, buf.peek(), buf.readableBytes());
   // 如果是短连接的话，返回响应报文后就断开连接
@@ -218,9 +246,10 @@ void HttpServer::handleRequest(const HttpRequest &req, HttpResponse *resp) {
     // 处理中间件抛出的响应（如CORS预检请求）
     *resp = res;
   } catch (const std::exception &e) {
-    // 错误处理
+    LOG_ERROR << "handleRequest: " << e.what();
     resp->setStatusCode(HttpResponse::k500InternalServerError);
-    resp->setBody(e.what());
+    resp->setStatusMessage("Internal Server Error");
+    resp->setBody("Internal Server Error");
   }
 }
 

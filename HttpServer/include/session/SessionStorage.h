@@ -1,6 +1,8 @@
 #pragma once
 #include "Session.h"
 #include <memory>
+#include <mutex>
+#include <unordered_map>
 
 namespace http
 {
@@ -27,6 +29,7 @@ public:
     void cleanExpired() override;
 private:
     std::unordered_map<std::string, std::shared_ptr<Session>> sessions_;
+    mutable std::mutex mutex_;
 };
 
 } // namespace session

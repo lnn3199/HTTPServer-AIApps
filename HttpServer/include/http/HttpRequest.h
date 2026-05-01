@@ -60,8 +60,10 @@ public:
     }
     
     void addHeader(const char* start, const char* colon, const char* end);
+    /** 字段名不区分大小写；内部以小写存储，查找时也会将 field 转为小写。 */
     std::string getHeader(const std::string& field) const;
 
+    /** 请求头字段名均为小写 key（HTTP 语义中场名不区分大小写）。 */
     const std::map<std::string, std::string>& headers() const
     { return headers_; }
 

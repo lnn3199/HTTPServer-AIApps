@@ -4,6 +4,7 @@
 #include "../http/HttpRequest.h"
 #include "../http/HttpResponse.h"
 #include <memory>
+#include <mutex>
 #include <random>
 
 namespace http
@@ -26,10 +27,7 @@ public:
     void cleanExpiredSessions();
 
     // 更新会话
-    void updateSession(std::shared_ptr<Session> session)
-    {
-        storage_->save(session);
-    }
+    void updateSession(std::shared_ptr<Session> session);
 private:
     std::string generateSessionId();
     std::string getSessionIdFromCookie(const HttpRequest& req);
@@ -37,7 +35,8 @@ private:
 
 private:
     std::unique_ptr<SessionStorage> storage_;
-    std::mt19937 rng_; // 用于生成随机会话id
+    std::mt19937 rng_;
+    mutable std::mutex mutex_;
 };
 
 } // namespace session

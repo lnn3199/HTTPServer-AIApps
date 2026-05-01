@@ -1,5 +1,7 @@
 #include "../../include/http/HttpContext.h"
 #include <algorithm>
+#include <charconv>
+#include <cstdint>
 using namespace muduo;
 using namespace muduo::net;
 
@@ -9,6 +11,7 @@ namespace http
 // 将报文解析出来将关键信息封装到HttpRequest对象里面去
 bool HttpContext::parseRequest(Buffer *buf, Timestamp receiveTime)
 {
+    parseErrorStatus_ = 400;
     bool ok = true; // 解析每行请求格式是否正确
     bool hasMore = true;
     while (hasMore)
@@ -56,18 +59,37 @@ bool HttpContext::parseRequest(Buffer *buf, Timestamp receiveTime)
                     if (request_.method() == HttpRequest::kPost || 
                         request_.method() == HttpRequest::kPut)
                     {
-                        std::string contentLength = request_.getHeader("Content-Length");
+                        const std::string &contentLength =
+                            request_.getHeader("Content-Length");
                         if (!contentLength.empty())
                         {
-                            request_.setContentLength(std::stoi(contentLength));
-                            if (request_.contentLength() > 0)
+                            std::uint64_t len = 0;
+                            const char *first = contentLength.data();
+                            const char *last = first + contentLength.size();
+                            auto r = std::from_chars(first, last, len);
+                            if (r.ec != std::errc{} || r.ptr != last)
                             {
-                                state_ = kExpectBody;
+                                ok = false;
+                                hasMore = false;
+                            }
+                            else if (len > maxBodyBytes_)
+                            {
+                                parseErrorStatus_ = 413;
+                                ok = false;
+                                hasMore = false;
                             }
                             else
                             {
-                                state_ = kGotAll;
-                                hasMore = false;
+                                request_.setContentLength(len);
+                                if (request_.contentLength() > 0)
+                                {
+                                    state_ = kExpectBody;
+                                }
+                                else
+                                {
+                                    state_ = kGotAll;
+                                    hasMore = false;
+                                }
                             }
                         }
                         else

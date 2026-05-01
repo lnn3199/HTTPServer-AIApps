@@ -1,10 +1,11 @@
 #pragma once
-#include <iostream>
-#include <unordered_map>
-#include <string>
-#include <memory>
 #include <functional>
+#include <memory>
 #include <regex>
+#include <shared_mutex>
+#include <string>
+#include <unordered_map>
+#include <utility>
 #include <vector>
 
 #include "RouterHandler.h"
@@ -16,16 +17,12 @@ namespace http
 namespace router
 {
 
-// 选择注册对象式的路由处理器还是注册回调函数式的处理器取决于处理器执行的复杂程度
-// 如果是简单的处理可以注册回调函数，否则注册对象式路由处理器(对象中可封装多个相关函数)
-// 二者注册其一即可
 class Router
 {
 public:
     using HandlerPtr = std::shared_ptr<RouterHandler>;
     using HandlerCallback = std::function<void(const HttpRequest &, HttpResponse *)>;
 
-    // 路由键（请求方法 + URI）
     struct RouteKey
     {
         HttpRequest::Method method;
@@ -37,77 +34,47 @@ public:
         }
     };
 
-    // 为RouteKey 定义哈希函数
     struct RouteKeyHash
     {
-        // size_t operator()(const RouteKey& key) const
-        // {
-        //     return std::hash<int>{}(static_cast<int>(key.method)) ^
-        //            std::hash<std::string>{}(key.path);
-        // }
         size_t operator()(const RouteKey &key) const
         {
-            // 这里使用了 C++11 的统一初始化语法（花括号{}），std::hash<T>{} 是用于生成类型 T 的哈希对象。
-            // 例如 std::hash<int>{}(static_cast<int>(key.method)) 是先通过 static_cast 把枚举类型转换为 int，再生成对应的哈希值。
-            // std::hash<std::string>{}(key.path) 则是直接对 string 类型生成哈希值。
-            // 这种写法等价于：std::hash<int> hashInt; size_t methodHash = hashInt(static_cast<int>(key.method));
             size_t methodHash = std::hash<int>{}(static_cast<int>(key.method));
             size_t pathHash = std::hash<std::string>{}(key.path);
             return methodHash * 31 + pathHash;
         }
     };
 
-    // 注册路由处理器
+    using RegexPrefixKey = std::pair<HttpRequest::Method, std::string>;
+
+    struct RegexPrefixKeyHash
+    {
+        size_t operator()(const RegexPrefixKey &k) const
+        {
+            return std::hash<int>{}(static_cast<int>(k.first)) ^
+                   (std::hash<std::string>{}(k.second) + 0x9e3779b9);
+        }
+    };
+
     void registerHandler(HttpRequest::Method method, const std::string &path, HandlerPtr handler);
+    void registerCallback(HttpRequest::Method method, const std::string &path,
+                          const HandlerCallback &callback);
+    void addRegexHandler(HttpRequest::Method method, const std::string &path, HandlerPtr handler);
+    void addRegexCallback(HttpRequest::Method method, const std::string &path,
+                          const HandlerCallback &callback);
 
-    // 注册回调函数形式的处理器
-    void registerCallback(HttpRequest::Method method, const std::string &path, const HandlerCallback &callback);
-
-    // 注册动态路由处理器
-    void addRegexHandler(HttpRequest::Method method, const std::string &path, HandlerPtr handler)
-    {
-        std::regex pathRegex = convertToRegex(path);
-        regexHandlers_.emplace_back(method, pathRegex, handler);
-    }
-
-    // 注册动态路由处理函数
-    void addRegexCallback(HttpRequest::Method method, const std::string &path, const HandlerCallback &callback)
-    {
-        std::regex pathRegex = convertToRegex(path);
-        regexCallbacks_.emplace_back(method, pathRegex, callback);
-    }
-
-    // 处理请求
     bool route(const HttpRequest &req, HttpResponse *resp);
 
 private:
-    std::regex convertToRegex(const std::string &pathPattern)
-    { // 将路径模式转换为正则表达式，支持匹配任意路径参数
-        std::string regexPattern = "^" + std::regex_replace(pathPattern, std::regex(R"(/:([^/]+))"), R"(/([^/]+))") + "$";
-        return std::regex(regexPattern);
-    }
+    std::regex convertToRegex(const std::string &pathPattern);
+    void extractPathParameters(const std::smatch &match, HttpRequest &request);
 
-    // 提取路径参数
-    // match 是正则表达式 std::regex 匹配结果的类型（std::smatch），
-    // 用于存储路径参数等分组的捕获内容。
-    // match[0] 通常为整个匹配的字符串，match[1] ~ match[n] 为各个分组的内容。
-    void extractPathParameters(const std::smatch &match, HttpRequest &request)
-    {
-        // Assuming the first match is the full path, parameters start from index 1
-        for (size_t i = 1; i < match.size(); ++i)
-        {
-            request.setPathParameters("param" + std::to_string(i), match[i].str());
-        }
-    }
-
-private:
     struct RouteCallbackObj
     {
         HttpRequest::Method method_;
         std::regex pathRegex_;
         HandlerCallback callback_;
         RouteCallbackObj(HttpRequest::Method method, std::regex pathRegex, const HandlerCallback &callback)
-            : method_(method), pathRegex_(pathRegex), callback_(callback) {}
+            : method_(method), pathRegex_(std::move(pathRegex)), callback_(callback) {}
     };
 
     struct RouteHandlerObj
@@ -116,15 +83,18 @@ private:
         std::regex pathRegex_;
         HandlerPtr handler_;
         RouteHandlerObj(HttpRequest::Method method, std::regex pathRegex, HandlerPtr handler)
-            : method_(method), pathRegex_(pathRegex), handler_(handler) {}
+            : method_(method), pathRegex_(std::move(pathRegex)), handler_(std::move(handler)) {}
     };
 
-    std::unordered_map<RouteKey, HandlerPtr, RouteKeyHash>      handlers_;       // 精准匹配
-    std::unordered_map<RouteKey, HandlerCallback, RouteKeyHash> callbacks_; // 精准匹配
-    std::vector<RouteHandlerObj>                                regexHandlers_;     // 正则匹配
-    std::vector<RouteCallbackObj>                               regexCallbacks_;   // 正则匹配
-};
+    std::unordered_map<RouteKey, HandlerPtr, RouteKeyHash> handlers_;
+    std::unordered_map<RouteKey, HandlerCallback, RouteKeyHash> callbacks_;
+    std::unordered_map<RegexPrefixKey, std::vector<RouteHandlerObj>, RegexPrefixKeyHash>
+        regexHandlersByPrefix_;
+    std::unordered_map<RegexPrefixKey, std::vector<RouteCallbackObj>, RegexPrefixKeyHash>
+        regexCallbacksByPrefix_;
 
+    mutable std::shared_mutex mutex_;
+};
 
 } // namespace router
 } // namespace http

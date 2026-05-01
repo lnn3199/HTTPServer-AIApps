@@ -73,7 +73,6 @@ private:
     bool                               closeConnection_;
     std::map<std::string, std::string> headers_;
     std::string                        body_;
-    bool                               isFile_;
 };
 
-} // namespace httpc
+} // namespace http

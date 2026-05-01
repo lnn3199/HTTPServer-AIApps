@@ -4,9 +4,11 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
+#include <cstdint>
 #include <functional>
 #include <map>
 #include <memory>
+#include <mutex>
 
 #include <muduo/net/TcpServer.h>
 #include <muduo/net/EventLoop.h>
@@ -114,7 +116,11 @@ public:
         useSSL_ = enable;
     }
 
-    void setSslConfig(const ssl::SslConfig& config);
+    bool setSslConfig(const ssl::SslConfig& config);
+
+    /** 请求体最大长度（字节），超过则返回 413，默认 8MiB。 */
+    void setMaxRequestBodyBytes(std::uint64_t n) { maxRequestBodyBytes_ = n; }
+    std::uint64_t maxRequestBodyBytes() const { return maxRequestBodyBytes_; }
 
 private:
     void initialize();
@@ -143,6 +149,8 @@ private:
     std::unique_ptr<ssl::SslContext>             sslCtx_;
     bool                                         useSSL_;
     std::map<muduo::net::TcpConnectionPtr, std::unique_ptr<ssl::SslConnection>> sslConns_;
+    mutable std::mutex sslConnsMutex_;
+    std::uint64_t maxRequestBodyBytes_{8ULL * 1024 * 1024};
 }; 
 
 } // namespace http

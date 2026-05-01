@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstdint>
 #include <iostream>
 
 #include <muduo/net/TcpServer.h>
@@ -20,17 +21,19 @@ public:
         kGotAll, // 解析完成
     };
     
-    HttpContext()
-    : state_(kExpectRequestLine)
-    {}
+    explicit HttpContext(std::uint64_t maxBodyBytes = 8ULL * 1024 * 1024)
+    : state_(kExpectRequestLine), maxBodyBytes_(maxBodyBytes) {}
 
     bool parseRequest(muduo::net::Buffer* buf, muduo::Timestamp receiveTime);
     bool gotAll() const 
     { return state_ == kGotAll;  }
 
+    int parseErrorStatus() const { return parseErrorStatus_; }
+
     void reset()
     {
         state_ = kExpectRequestLine;
+        parseErrorStatus_ = 400;
         HttpRequest dummyData;
         request_.swap(dummyData);
     }
@@ -46,6 +49,8 @@ private:
 private:
     HttpRequestParseState state_;
     HttpRequest           request_;
+    std::uint64_t maxBodyBytes_;
+    int           parseErrorStatus_{400};
 };
 
 } // namespace http

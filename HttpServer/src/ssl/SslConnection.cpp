@@ -1,5 +1,6 @@
 #include "../../include/ssl/SslConnection.h"
 #include <algorithm>
+#include <climits>
 #include <muduo/base/Logging.h>
 #include <openssl/err.h>
 
@@ -32,9 +33,17 @@ SslConnection::SslConnection(const TcpConnectionPtr &conn, SslContext *ctx)
   SSL_set_mode(ssl_, SSL_MODE_ENABLE_PARTIAL_WRITE);
   // 不覆盖 TcpConnection 的 messageCallback：由 HttpServer::onMessage 统一入口，
   // 内部再调用 onRead，解密后用 getDecryptedBuffer() 做 HTTP 解析。
+  //
+  // SSL_write 可能返回 WANT_WRITE：密文在 writeBio_ / Muduo 输出缓冲里未排空时，
+  // 需在「本连接可继续写」时调用 drainPendingPlain 续写，否则会丢尾包。
+  conn_->setWriteCompleteCallback(
+      [this](const TcpConnectionPtr &) { onWriteComplete(); });
 }
 
 SslConnection::~SslConnection() {
+  if (conn_) {
+    conn_->setWriteCompleteCallback({});
+  }
   if (ssl_) {
     SSL_free(ssl_);
   }
@@ -54,6 +63,33 @@ void SslConnection::flushWriteBio() {
   }
 }
 
+bool SslConnection::feedReadBio(const void *data, size_t len) {
+  if (!readBio_) {
+    return len == 0;
+  }
+  if (len == 0) {
+    return true;
+  }
+  const auto *p = static_cast<const unsigned char *>(data);
+  size_t remain = len;
+  while (remain > 0) {
+    int chunk =
+        static_cast<int>(std::min(remain, static_cast<size_t>(INT_MAX)));
+    int w = BIO_write(readBio_, p, chunk);
+    if (w != chunk) {
+      LOG_ERROR << "BIO_write(readBio_) failed: expected " << chunk
+                << " bytes, got " << w;
+      state_ = SSLState::ERROR;
+      flushWriteBio();
+      conn_->shutdown();
+      return false;
+    }
+    p += static_cast<size_t>(w);
+    remain -= static_cast<size_t>(w);
+  }
+  return true;
+}
+
 void SslConnection::startHandshake() {
   if (!ssl_) {
     LOG_ERROR << "Cannot start handshake: ssl_ is null";
@@ -62,6 +98,65 @@ void SslConnection::startHandshake() {
   }
   SSL_set_accept_state(ssl_);
   handleHandshake();
+}
+
+void SslConnection::drainPendingPlain() {
+  if (!ssl_ || state_ != SSLState::ESTABLISHED) {
+    return;
+  }
+  constexpr int kMaxSpins = 65536;
+  int spins = 0;
+  while (!pendingPlain_.empty() && spins < kMaxSpins) {
+    ++spins;
+    int chunk = static_cast<int>(
+        std::min(pendingPlain_.size(), static_cast<size_t>(INT_MAX)));
+    int n = SSL_write(ssl_, pendingPlain_.data(), chunk);
+    if (n > 0) {
+      pendingPlain_.erase(pendingPlain_.begin(),
+                          pendingPlain_.begin() + n);
+      flushWriteBio();
+      continue;
+    }
+    int err = SSL_get_error(ssl_, n);
+    if (err == SSL_ERROR_WANT_READ || err == SSL_ERROR_WANT_WRITE) {
+      flushWriteBio();
+      return;
+    }
+    if (err == SSL_ERROR_ZERO_RETURN) {
+      pendingPlain_.clear();
+      flushWriteBio();
+      return;
+    }
+    LOG_ERROR << "drainPendingPlain: SSL_write failed, SSL_get_error=" << err;
+    pendingPlain_.clear();
+    state_ = SSLState::ERROR;
+    flushWriteBio();
+    conn_->shutdown();
+    return;
+  }
+  if (spins >= kMaxSpins && !pendingPlain_.empty()) {
+    LOG_ERROR << "drainPendingPlain: spin limit exceeded, closing";
+    pendingPlain_.clear();
+    state_ = SSLState::ERROR;
+    conn_->shutdown();
+    return;
+  }
+  flushWriteBio();
+}
+
+void SslConnection::onWriteComplete() {
+  if (!ssl_) {
+    return;
+  }
+  flushWriteBio();
+  if (state_ == SSLState::HANDSHAKE) {
+    handleHandshake();
+    return;
+  }
+  if (state_ == SSLState::ESTABLISHED) {
+    drainPendingPlain();
+    flushWriteBio();
+  }
 }
 
 void SslConnection::send(const void *data, size_t len) {
@@ -73,15 +168,45 @@ void SslConnection::send(const void *data, size_t len) {
     LOG_ERROR << "Cannot send data before SSL handshake is complete";
     return;
   }
-
-  int written = SSL_write(ssl_, data, len);
-  if (written <= 0) {
-    int err = SSL_get_error(ssl_, written);
-    LOG_ERROR << "SSL_write failed, SSL_get_error=" << err;
-    flushWriteBio();
+  if (len == 0) {
     return;
   }
 
+  const char *p = static_cast<const char *>(data);
+  size_t remain = len;
+
+  while (remain > 0) {
+    int chunk =
+        static_cast<int>(std::min(remain, static_cast<size_t>(INT_MAX)));
+    int n = SSL_write(ssl_, p, chunk);
+    if (n > 0) {
+      p += static_cast<size_t>(n);
+      remain -= static_cast<size_t>(n);
+      flushWriteBio();
+      continue;
+    }
+
+    int err = SSL_get_error(ssl_, n);
+    if (err == SSL_ERROR_WANT_READ || err == SSL_ERROR_WANT_WRITE) {
+      flushWriteBio();
+      if (remain > 0) {
+        pendingPlain_.insert(pendingPlain_.end(), p, p + remain);
+      }
+      drainPendingPlain();
+      return;
+    }
+    if (err == SSL_ERROR_ZERO_RETURN) {
+      LOG_WARN << "SSL_write: peer sent close_notify";
+      flushWriteBio();
+      return;
+    }
+    LOG_ERROR << "SSL_write failed, SSL_get_error=" << err;
+    pendingPlain_.clear();
+    state_ = SSLState::ERROR;
+    flushWriteBio();
+    conn_->shutdown();
+    return;
+  }
   flushWriteBio();
 }
 
@@ -100,11 +225,11 @@ void SslConnection::onRead(const TcpConnectionPtr &conn, BufferPtr buf,
 
   // 2. 如果还在握手阶段，处理握手数据
   if (state_ == SSLState::HANDSHAKE) {
-    // 将TCP缓冲区的数据写入SSL的readBio(BIO输入缓存)
-    BIO_write(readBio_, buf->peek(), buf->readableBytes());
-    // 移动缓冲区读取位置，相当于消费掉这些数据
-    buf->retrieve(buf->readableBytes());
-    // 继续尝试SSL握手
+    const size_t n = buf->readableBytes();
+    if (!feedReadBio(buf->peek(), n)) {
+      return;
+    }
+    buf->retrieve(n);
     handleHandshake();
     return;
   }
@@ -114,10 +239,11 @@ void SslConnection::onRead(const TcpConnectionPtr &conn, BufferPtr buf,
     if (buf->readableBytes() == 0) {
       return;
     }
-    // 把从TCP收到的加密数据写入readBio_
-    BIO_write(readBio_, buf->peek(), buf->readableBytes());
-    // 消费缓冲区内的数据
-    buf->retrieve(buf->readableBytes());
+    const size_t n = buf->readableBytes();
+    if (!feedReadBio(buf->peek(), n)) {
+      return;
+    }
+    buf->retrieve(n);
 
     char decryptedData[4096];
     int ret = 0;
@@ -134,8 +260,9 @@ void SslConnection::onRead(const TcpConnectionPtr &conn, BufferPtr buf,
         handleError(error);
       }
     }
-    // 把SSL write BIO 里可能缓存的加密数据发给对端
+    // 把 SSL write BIO 里可能缓存的加密数据发给对端；若之前有未完成的发送，尝试续写
     flushWriteBio();
+    drainPendingPlain();
   }
 }
 

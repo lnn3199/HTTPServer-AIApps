@@ -1,6 +1,5 @@
-#include"../include/session/SessionManager.h"
-#include <iomanip>
-#include <iostream>
+#include "../../include/session/SessionManager.h"
+
 #include <sstream>
 
 namespace http
@@ -16,7 +15,8 @@ SessionManager::SessionManager(std::unique_ptr<SessionStorage> storage)
 
 // 从请求中获取或创建会话，也就是说，如果请求中包含会话ID，则从存储中加载会话，否则创建一个新的会话
 std::shared_ptr<Session> SessionManager::getSession(const HttpRequest& req, HttpResponse* resp)
-{   
+{
+    std::lock_guard<std::mutex> lock(mutex_);
     std::string sessionId = getSessionIdFromCookie(req);
     
     std::shared_ptr<Session> session;
@@ -58,12 +58,20 @@ std::string SessionManager::generateSessionId()
 
 void SessionManager::destroySession(const std::string& sessionId)
 {
+    std::lock_guard<std::mutex> lock(mutex_);
     storage_->remove(sessionId);
 }
 
 void SessionManager::cleanExpiredSessions()
 {
+    std::lock_guard<std::mutex> lock(mutex_);
     storage_->cleanExpired();
+}
+
+void SessionManager::updateSession(std::shared_ptr<Session> session)
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+    storage_->save(session);
 }
 
 std::string SessionManager::getSessionIdFromCookie(const HttpRequest& req)
